@@ -33,6 +33,11 @@ twoway = "0.1.8"
 pest = "2"
 pest_derive = "2"
 
+[dependencies.syntect]
+version = "3"
+default-features = false
+features = ["parsing", "assets", "html", "dump-load"]
+
 [dev-dependencies]
 timebomb = "0.1.2"
 

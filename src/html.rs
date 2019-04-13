@@ -2,6 +2,10 @@ use ctype::isspace;
 use nodes::{AstNode, ListType, NodeValue, TableAlignment};
 use parser::ComrakOptions;
 use regex::Regex;
+use syntect::{
+    html::ClassedHTMLGenerator,
+    parsing::SyntaxSet,
+};
 use scanners;
 use std::borrow::Cow;
 use std::cell::Cell;
@@ -401,6 +405,10 @@ impl<'o> HtmlFormatter<'o> {
     }
 
     fn format_node<'a>(&mut self, node: &'a AstNode<'a>, entering: bool) -> io::Result<bool> {
+        lazy_static! {
+            static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
+        }
+
         match node.data.borrow().value {
             NodeValue::Document => (),
             NodeValue::BlockQuote => if entering {
@@ -473,13 +481,19 @@ impl<'o> HtmlFormatter<'o> {
             NodeValue::CodeBlock(ref ncb) => if entering {
                 self.cr()?;
 
-                if ncb.info.is_empty() {
+                let syntax = if ncb.info.is_empty() {
                     self.output.write_all(b"<pre><code>")?;
+                    SYNTAX_SET.find_syntax_plain_text()
                 } else {
                     let mut first_tag = 0;
                     while first_tag < ncb.info.len() && !isspace(ncb.info[first_tag]) {
                         first_tag += 1;
                     }
+
+                    let syn = match std::str::from_utf8(&ncb.info[..first_tag]) {
+                        Ok(s) => SYNTAX_SET.find_syntax_by_token(s),
+                        Err(_) => None,
+                    }.unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text());
 
                     if self.options.github_pre_lang {
                         self.output.write_all(b"<pre lang=\"")?;
@@ -490,8 +504,21 @@ impl<'o> HtmlFormatter<'o> {
                         self.escape(&ncb.info[..first_tag])?;
                         self.output.write_all(b"\">")?;
                     }
+
+                    syn
+                };
+
+                let mut html_generator = ClassedHTMLGenerator::new(&syntax, &SYNTAX_SET);
+                match std::str::from_utf8(&ncb.literal) {
+                    Ok(s) => {
+                        for line in syntect::util::LinesWithEndings::from(s) {
+                            html_generator.parse_html_for_line(&line);
+                        }
+                        let output_html = html_generator.finalize();
+                        self.output.write_all(output_html.as_bytes())?;
+                    },
+                    Err(_) => self.escape(&ncb.literal)?,
                 }
-                self.escape(&ncb.literal)?;
                 self.output.write_all(b"</code></pre>\n")?;
             },
             NodeValue::HtmlBlock(ref nhb) => if entering {
