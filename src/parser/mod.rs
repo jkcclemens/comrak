@@ -378,6 +378,11 @@ pub struct ComrakOptions {
     ///            "<dl><dt>\n<p>Term</p>\n</dt>\n<dd>\n<p>Definition</p>\n</dd>\n</dl>\n");
     /// ```
     pub ext_description_lists: bool,
+
+    /// Highlight code blocks with `syntect`?
+    ///
+    /// Specify a prefix or "" for class names.
+    pub ext_highlight: Option<String>,
 }
 
 #[derive(Clone)]

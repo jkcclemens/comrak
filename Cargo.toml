@@ -34,7 +34,8 @@ pest = "2"
 pest_derive = "2"
 
 [dependencies.syntect]
-version = "3"
+git = "https://github.com/jkcclemens/syntect"
+branch = "prefixes"
 default-features = false
 features = ["assets", "dump-load", "html"]
 

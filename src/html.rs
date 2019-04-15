@@ -3,7 +3,10 @@ use nodes::{AstNode, ListType, NodeValue, TableAlignment};
 use parser::ComrakOptions;
 use regex::Regex;
 use syntect::{
-    html::ClassedHTMLGenerator,
+    html::{
+        ClassedHTMLGenerator,
+        ClassStyle,
+    },
     parsing::SyntaxSet,
 };
 use scanners;
@@ -508,17 +511,30 @@ impl<'o> HtmlFormatter<'o> {
                     syn
                 };
 
-                let mut html_generator = ClassedHTMLGenerator::new(&syntax, &SYNTAX_SET);
-                match std::str::from_utf8(&ncb.literal) {
-                    Ok(s) => {
-                        for line in syntect::util::LinesWithEndings::from(s) {
-                            html_generator.parse_html_for_line(&line);
+                match self.options.ext_highlight {
+                    Some(ref prefix) => {
+                        let mut html_generator = if prefix.is_empty() {
+                            ClassedHTMLGenerator::new(&syntax, &SYNTAX_SET)
+                        } else {
+                            ClassedHTMLGenerator::with_style(
+                                &syntax,
+                                &SYNTAX_SET,
+                                ClassStyle::SpacedPrefix(prefix)
+                            )
+                        };
+                        match std::str::from_utf8(&ncb.literal) {
+                            Ok(s) => {
+                                for line in syntect::util::LinesWithEndings::from(s) {
+                                    html_generator.parse_html_for_line(&line);
+                                }
+                                let output_html = html_generator.finalize();
+                                self.output.write_all(output_html.as_bytes())?;
+                            },
+                            Err(_) => self.escape(&ncb.literal)?,
                         }
-                        let output_html = html_generator.finalize();
-                        self.output.write_all(output_html.as_bytes())?;
                     },
-                    Err(_) => self.escape(&ncb.literal)?,
-                }
+                    None => self.escape(&ncb.literal)?,
+                };
                 self.output.write_all(b"</code></pre>\n")?;
             },
             NodeValue::HtmlBlock(ref nhb) => if entering {
