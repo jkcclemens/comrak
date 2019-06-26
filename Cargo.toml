@@ -33,11 +33,9 @@ twoway = "0.1.8"
 pest = "2"
 pest_derive = "2"
 
-[dependencies.syntect]
-git = "https://github.com/jkcclemens/syntect"
-branch = "prefixes"
-default-features = false
-features = ["assets", "dump-load", "html"]
+[dependencies.rouge]
+git = "https://gitlab.com/jkcclemens/paste_rouge"
+branch = "gross_subprocess"
 
 [dev-dependencies]
 timebomb = "0.1.2"

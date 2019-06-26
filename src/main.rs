@@ -124,7 +124,7 @@ fn main() -> Result<(), Box<Error>> {
         ext_header_ids: matches.value_of("header-ids").map(|s| s.to_string()),
         ext_footnotes: exts.remove("footnotes"),
         ext_description_lists: exts.remove("description-lists"),
-        ext_highlight: None,
+        ext_highlight: exts.remove("highlight"),
     };
 
     if !exts.is_empty() {

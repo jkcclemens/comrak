@@ -80,7 +80,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 extern crate regex;
-extern crate syntect;
+extern crate rouge;
 #[cfg(feature = "benchmarks")]
 extern crate test;
 #[cfg(test)]
