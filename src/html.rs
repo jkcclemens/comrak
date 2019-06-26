@@ -504,7 +504,7 @@ impl<'o> HtmlFormatter<'o> {
                 if self.options.ext_highlight {
                     match std::str::from_utf8(&ncb.literal) {
                         Ok(s) => {
-                            for line in Rouge::highlight(HighlightKind::Snippet, lang, s)? {
+                            for line in Rouge::highlight_lines(HighlightKind::Snippet, lang, s)? {
                                 self.output.write_all(line.as_bytes())?;
                             }
                         },
