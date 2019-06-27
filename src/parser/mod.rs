@@ -382,7 +382,7 @@ pub struct ComrakOptions {
     /// Highlight code blocks with `syntect`?
     ///
     /// Specify a prefix or "" for class names.
-    pub ext_highlight: bool,
+    pub ext_highlight: Option<url::Url>,
 }
 
 #[derive(Clone)]

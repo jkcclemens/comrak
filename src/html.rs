@@ -2,6 +2,7 @@ use ctype::isspace;
 use nodes::{AstNode, ListType, NodeValue, TableAlignment};
 use parser::ComrakOptions;
 use regex::Regex;
+use rouge::{HighlightKind, Rouge};
 use scanners;
 use std::borrow::Cow;
 use std::cell::Cell;
@@ -497,28 +498,17 @@ impl<'o> HtmlFormatter<'o> {
                     lang
                 };
 
-                lazy_static! {
-                    static ref CLIENT: reqwest::Client = reqwest::Client::new();
-                }
-
-                if self.options.ext_highlight {
-                    match std::str::from_utf8(&ncb.literal) {
+                match self.options.ext_highlight {
+                    Some(ref u) => match std::str::from_utf8(&ncb.literal) {
                         Ok(s) => {
-                            let mut url = reqwest::Url::parse("http://highlight:8080/highlight/snippet")
-                                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-                            url.query_pairs_mut().append_pair("name", lang);
-                            let highlighted = CLIENT.post(url)
-                                .body(s.to_owned())
-                                .send()
-                                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-                                .text()
+                            let rouge = Rouge::new(u.clone());
+                            let highlighted = rouge.highlight(HighlightKind::Snippet, lang, s)
                                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
                             self.output.write_all(highlighted.as_bytes())?;
                         },
                         Err(_) => self.escape(&ncb.literal)?,
-                    }
-                } else {
-                    self.escape(&ncb.literal)?;
+                    },
+                    None => self.escape(&ncb.literal)?,
                 }
                 self.output.write_all(b"</code></pre>\n")?;
             },
